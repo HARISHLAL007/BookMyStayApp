@@ -3,7 +3,9 @@ import java.util.Queue;
 
 public class BookingRequestQueue {
     private Queue<Reservation> queue;
-
+    public Queue<Reservation> getQueue() {
+        return queue;
+    }
     public BookingRequestQueue() {
         queue = new LinkedList<>();
     }
