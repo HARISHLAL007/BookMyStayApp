@@ -4,15 +4,22 @@ public class RoomAllocationService {
 
     private RoomInventory inventory;
     private BookingRequestQueue requestQueue;
+    private BookingHistory history;
 
+    // Prevent duplicate room IDs
     private Set<String> allocatedRoomIds = new HashSet<>();
+
+    // Map room type -> allocated room IDs
     private HashMap<String, Set<String>> roomAllocations = new HashMap<>();
 
     private int roomCounter = 1;
 
-    public RoomAllocationService(RoomInventory inventory, BookingRequestQueue requestQueue) {
+    public RoomAllocationService(RoomInventory inventory,
+                                 BookingRequestQueue requestQueue,
+                                 BookingHistory history) {
         this.inventory = inventory;
         this.requestQueue = requestQueue;
+        this.history = history;
     }
 
     public void processRequests() {
@@ -26,14 +33,16 @@ public class RoomAllocationService {
             String roomType = request.getRoomType();
             String guest = request.getGuestName();
 
-            int available = inventory.getInventorySnapshot().getOrDefault(roomType, 0);
+            int available = inventory
+                    .getInventorySnapshot()
+                    .getOrDefault(roomType, 0);
 
             if (available > 0) {
 
                 // Generate unique room ID
                 String roomId = roomType + "-" + roomCounter++;
 
-                // Ensure uniqueness
+                // Ensure no duplicate
                 if (!allocatedRoomIds.contains(roomId)) {
 
                     allocatedRoomIds.add(roomId);
@@ -46,8 +55,12 @@ public class RoomAllocationService {
                     // Reduce inventory
                     inventory.reduceRoom(roomType);
 
+                    // Add to booking history (UC8)
+                    history.addBooking(request);
+
                     System.out.println("Booking Confirmed: " + guest +
-                            " -> " + roomType + " | Room ID: " + roomId);
+                            " -> " + roomType +
+                            " | Room ID: " + roomId);
                 }
 
             } else {
