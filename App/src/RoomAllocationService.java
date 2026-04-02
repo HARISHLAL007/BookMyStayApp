@@ -5,21 +5,21 @@ public class RoomAllocationService {
     private RoomInventory inventory;
     private BookingRequestQueue requestQueue;
     private BookingHistory history;
+    private BookingValidator validator;
 
-    // Prevent duplicate room IDs
     private Set<String> allocatedRoomIds = new HashSet<>();
-
-    // Map room type -> allocated room IDs
     private HashMap<String, Set<String>> roomAllocations = new HashMap<>();
 
     private int roomCounter = 1;
 
     public RoomAllocationService(RoomInventory inventory,
                                  BookingRequestQueue requestQueue,
-                                 BookingHistory history) {
+                                 BookingHistory history,
+                                 BookingValidator validator) {
         this.inventory = inventory;
         this.requestQueue = requestQueue;
         this.history = history;
+        this.validator = validator;
     }
 
     public void processRequests() {
@@ -28,34 +28,27 @@ public class RoomAllocationService {
 
         while (!queue.isEmpty()) {
 
-            Reservation request = queue.poll(); // FIFO
+            Reservation request = queue.poll();
 
-            String roomType = request.getRoomType();
-            String guest = request.getGuestName();
+            try {
+                // ✅ VALIDATION
+                validator.validate(request);
 
-            int available = inventory
-                    .getInventorySnapshot()
-                    .getOrDefault(roomType, 0);
+                String roomType = request.getRoomType();
+                String guest = request.getGuestName();
 
-            if (available > 0) {
-
-                // Generate unique room ID
                 String roomId = roomType + "-" + roomCounter++;
 
-                // Ensure no duplicate
                 if (!allocatedRoomIds.contains(roomId)) {
 
                     allocatedRoomIds.add(roomId);
 
-                    // Map room type to allocated IDs
                     roomAllocations
                             .computeIfAbsent(roomType, k -> new HashSet<>())
                             .add(roomId);
 
-                    // Reduce inventory
                     inventory.reduceRoom(roomType);
 
-                    // Add to booking history (UC8)
                     history.addBooking(request);
 
                     System.out.println("Booking Confirmed: " + guest +
@@ -63,9 +56,10 @@ public class RoomAllocationService {
                             " | Room ID: " + roomId);
                 }
 
-            } else {
-                System.out.println("Booking Failed (No Rooms): " + guest +
-                        " -> " + roomType);
+            } catch (InvalidBookingException e) {
+
+                // ✅ GRACEFUL FAILURE
+                System.out.println("Booking Failed: " + e.getMessage());
             }
         }
     }
