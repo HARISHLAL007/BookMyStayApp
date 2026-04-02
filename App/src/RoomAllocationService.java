@@ -21,7 +21,9 @@ public class RoomAllocationService {
         this.history = history;
         this.validator = validator;
     }
-
+    public void addRoom(String type, int count) {
+        inventory.put(type, inventory.getOrDefault(type, 0) + count);
+    }
     public void processRequests() {
 
         Queue<Reservation> queue = requestQueue.getQueue();
