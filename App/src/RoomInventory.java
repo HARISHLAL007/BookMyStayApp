@@ -36,3 +36,12 @@ public class RoomInventory {
         System.out.println();
     }
 }
+public void reduceRoom(String type) {
+    int count = inventory.getOrDefault(type, 0);
+    if (count > 0) {
+        inventory.put(type, count - 1);
+    }
+}
+
+void main() {
+}
