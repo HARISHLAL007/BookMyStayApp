@@ -9,7 +9,13 @@ public class BookingRequestQueue {
     public BookingRequestQueue() {
         queue = new LinkedList<>();
     }
+    public String pollRequest() {
+        return queue.poll();
+    }
 
+    public boolean isEmpty() {
+        return queue.isEmpty();
+    }
     // Add request (enqueue)
     public void addRequest(Reservation reservation) {
         queue.offer(reservation);
